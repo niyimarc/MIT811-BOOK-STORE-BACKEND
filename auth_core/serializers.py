@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
-from user_profile.models import BillingAddress
 
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
@@ -19,8 +18,3 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
-
-class BillingAddressSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BillingAddress
-        fields = ['address', 'state', 'city', 'apartment', 'country', 'zip_code']

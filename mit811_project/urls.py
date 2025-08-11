@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('auth_core.urls')),
     path('', include('catalog.urls')),
+    path('', include('user_profile.urls')),
 ]
 
 if not settings.DEBUG:
