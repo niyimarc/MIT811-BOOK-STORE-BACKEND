@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Author, Category, Publisher, Tag, Book, BookImage
+from .models import Author, Category, Publisher, Tag, Product, ProductImage
 
 
 @admin.register(Author)
@@ -33,11 +33,11 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class BookImageInline(admin.TabularInline):
-    model = BookImage
+    model = ProductImage
     extra = 1
 
 
-@admin.register(Book)
+@admin.register(Product)
 class BookAdmin(admin.ModelAdmin):
     list_display = ("title", "slug", "isbn", "price", "stock_quantity", "category", "publication_date", "created_at")
     list_filter = ("category", "publisher", "authors", "tags")
@@ -47,7 +47,7 @@ class BookAdmin(admin.ModelAdmin):
     ordering = ("title",)
 
 
-@admin.register(BookImage)
+@admin.register(ProductImage)
 class BookImageAdmin(admin.ModelAdmin):
     list_display = ("book", "is_main", "created_at")
     list_filter = ("is_main",)

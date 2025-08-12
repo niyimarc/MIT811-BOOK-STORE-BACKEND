@@ -32,9 +32,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'django_pg',
+    'mptt', 
     'auth_core',
     'catalog',
     'user_profile',
+    'store',
 ]
 
 MIDDLEWARE = [
@@ -174,3 +179,6 @@ FROM_EMAIL = f"{BUSINESS_NAME} <{EMAIL_HOST_USER}>"
 
 # hmac key 
 HMAC_SECRET_KEY = os.environ.get("HMAC_SECRET_KEY")
+
+# Models used for order
+PAYMENT_ORDER_MODEL = 'store.Order'

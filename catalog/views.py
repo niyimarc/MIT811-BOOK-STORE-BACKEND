@@ -1,5 +1,5 @@
 from rest_framework import generics
-from .models import Author, Category, Publisher, Tag, Book, BookImage
+from .models import Author, Category, Publisher, Tag, Product, ProductImage
 from .serializers import AuthorSerializer, CategorySerializer, PublisherSerializer, TagSerializer, BookListSerializer, BookDetailSerializer, BookImageSerializer
 from auth_core.views import PublicViewMixin, PrivateUserViewMixin
 from django.db.models import Q
@@ -30,7 +30,7 @@ class BookListView(PublicViewMixin, generics.ListAPIView):
     pagination_class = BookPagination
     
     def get_queryset(self):
-        queryset = Book.objects.all()
+        queryset = Product.objects.all()
 
         # Get query parameters
         category = self.request.query_params.get("category")
@@ -57,11 +57,11 @@ class BookListView(PublicViewMixin, generics.ListAPIView):
 
 
 class BookDetailView(PublicViewMixin, generics.RetrieveAPIView):
-    queryset = Book.objects.all()
+    queryset = Product.objects.all()
     serializer_class = BookDetailSerializer
     lookup_field = "id"
 
 
 class BookImageListView(PublicViewMixin, generics.ListAPIView):
-    queryset = BookImage.objects.all()
+    queryset = ProductImage.objects.all()
     serializer_class = BookImageSerializer
