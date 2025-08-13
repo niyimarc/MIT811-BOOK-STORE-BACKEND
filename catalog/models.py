@@ -1,8 +1,11 @@
 from django.db import models
 from django.utils.text import slugify
 from django.utils import timezone
-from .constants import PRODUCT_STATUS
+from django.contrib.auth.models import User
+from .constants import PRODUCT_STATUS, BOOK_FORMAT_CHOICES, PHYSICAL_STOCK_STATUS, EBOOK_STOCK_STATUS, BOOK_LANGUAGES
 from mptt.models import MPTTModel, TreeForeignKey
+from django.db.models import Avg
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -72,7 +75,46 @@ class Product(TimeStampedModel):
     publication_date = models.DateField(default=timezone.now)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_quantity = models.PositiveIntegerField(default=0)
-    category = models.ForeignKey(Category, related_name="books", on_delete=models.SET_NULL, null=True)
+    format_type = models.CharField(
+        max_length=20,
+        choices=BOOK_FORMAT_CHOICES,
+        default="physical"
+    )
+
+    physical_stock_status = models.CharField(
+        max_length=50,
+        choices=PHYSICAL_STOCK_STATUS,
+        default="in_stock",
+        blank=True,
+        null=True
+    )
+
+    ebook_stock_status = models.CharField(
+        max_length=50,
+        choices=EBOOK_STOCK_STATUS,
+        default="available",
+        blank=True,
+        null=True
+    )
+
+    language = models.CharField(
+        max_length=10,
+        choices=BOOK_LANGUAGES,
+        default="en",
+        blank=True,
+        null=True
+    )
+
+    ebook_file_size = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        help_text="File size in MB",
+        blank=True,
+        null=True
+    )
+    pages = models.PositiveIntegerField()
+    file_url = models.URLField(blank=True, null=True)
+    categories = models.ManyToManyField(Category, related_name="books", blank=True)
     authors = models.ManyToManyField(Author, related_name="books")
     publisher = models.ForeignKey(Publisher, related_name="books", on_delete=models.SET_NULL, null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name="books", blank=True)
@@ -81,20 +123,65 @@ class Product(TimeStampedModel):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+        
+        # Auto-set physical stock status
+        if self.format_type in ["physical", "both"]:
+            if self.stock_quantity == 0:
+                self.physical_stock_status = "out_of_stock"
+            elif self.stock_quantity <= 5:
+                self.physical_stock_status = "low_stock"
+            else:
+                self.physical_stock_status = "in_stock"
+
+        # Auto-set eBook stock status
+        if self.format_type in ["ebook", "both"]:
+            today = timezone.now().date()
+            if self.publication_date > today:
+                self.ebook_stock_status = "pre_order"
+            else:
+                self.ebook_stock_status = "available"
+
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
+    
+    @property
+    def average_rating(self):
+        # Returns the average rating for the book.
+        return self.ratings.aggregate(avg=Avg("score"))["avg"] or 0
 
+class ProductRating(TimeStampedModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="ratings", on_delete=models.CASCADE)
+    score = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(5)
+        ]
+    )
+    review = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ("user", "product")
+
+    def __str__(self):
+        return f"{self.user} rated {self.product} - {self.score} stars"
+    
 class ProductImage(TimeStampedModel):
     book = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
     image = models.ImageField(upload_to="books/images/")
     is_main = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        # Ensure only one main image per book
-        if self.is_main:
-            ProductImage.objects.filter(book=self.book, is_main=True).update(is_main=False)
+        # If no main image yet for this book, set this one as main
+        if not ProductImage.objects.filter(book=self.book, is_main=True).exclude(pk=self.pk).exists():
+            self.is_main = True
+
+        # If this one is marked as main, unset all others
+        elif self.is_main:
+            ProductImage.objects.filter(book=self.book, is_main=True).exclude(pk=self.pk).update(is_main=False)
+
         super().save(*args, **kwargs)
 
     def __str__(self):

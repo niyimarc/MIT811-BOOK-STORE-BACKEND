@@ -39,8 +39,8 @@ class BookImageInline(admin.TabularInline):
 
 @admin.register(Product)
 class BookAdmin(admin.ModelAdmin):
-    list_display = ("title", "slug", "isbn", "price", "stock_quantity", "category", "publication_date", "created_at")
-    list_filter = ("category", "publisher", "authors", "tags")
+    list_display = ("title", "slug", "isbn", "price", "stock_quantity", "publication_date", "created_at")
+    list_filter = ("publisher", "authors", "tags")
     search_fields = ("title", "isbn")
     prepopulated_fields = {"slug": ("title",)}
     inlines = [BookImageInline]
