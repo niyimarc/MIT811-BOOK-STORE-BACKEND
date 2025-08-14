@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Author, Category, Publisher, Tag, Product, ProductImage, ProductRating
+from django.db.models import Avg, Count
+import random
 
 class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,15 +64,74 @@ class BookListSerializer(serializers.ModelSerializer):
         return obj.ratings.count()
 
 class BookDetailSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
+    categories = CategorySerializer(many=True, read_only=True)
     authors = AuthorSerializer(many=True, read_only=True)
     publisher = PublisherSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     images = BookImageSerializer(many=True, read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    rating_counts = serializers.SerializerMethodField()
+    total_rating_count = serializers.SerializerMethodField()
+    related_books = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = "__all__"
+
+    def get_average_rating(self, obj):
+        return obj.average_rating
+    
+    def get_rating_counts(self, obj):
+        # Count how many ratings for each star 1–5
+        counts = (
+            ProductRating.objects
+            .filter(product=obj)
+            .values("score")
+            .annotate(product_count=Count("id"))
+        )
+        # Convert to dictionary {score: count}
+        count_map = {c["score"]: c["product_count"] for c in counts}
+        # Ensure all ratings 1–5 are included
+        results = []
+        for rating in range(1, 6):
+            results.append({
+                "rating": rating,
+                "product_count": count_map.get(rating, 0)
+            })
+        return results
+
+    def get_total_rating_count(self, obj):
+        total = ProductRating.objects.filter(product=obj).count()
+        return total or 0
+    
+    def get_related_books(self, obj):
+        related_books = []
+
+        # Same categories
+        category_books = Product.objects.filter(
+            categories__in=obj.categories.all()
+        ).exclude(id=obj.id).distinct()
+        related_books.extend(list(category_books))
+
+        # Same tags
+        if len(related_books) < 4 and obj.tags.exists():
+            tag_books = Product.objects.filter(
+                tags__in=obj.tags.all()
+            ).exclude(id__in=[p.id for p in related_books] + [obj.id]).distinct()
+            related_books.extend(list(tag_books))
+
+        # Random fallback
+        if len(related_books) < 4:
+            remaining_books = Product.objects.exclude(
+                id__in=[p.id for p in related_books] + [obj.id]
+            )
+            remaining_count = min(4 - len(related_books), remaining_books.count())
+            if remaining_count > 0:
+                related_books.extend(random.sample(list(remaining_books), remaining_count))
+
+        # Limit to 4 and serialize using BookListSerializer
+        serializer = BookListSerializer(related_books[:4], many=True, context=self.context)
+        return serializer.data
 
 class ProductRatingSerializer(serializers.ModelSerializer):
     class Meta:

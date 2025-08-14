@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Author, Category, Publisher, Tag, Product, ProductImage
+from .models import Author, Category, Publisher, Tag, Product, ProductImage, ProductRating
 
 
 @admin.register(Author)
@@ -51,3 +51,7 @@ class BookAdmin(admin.ModelAdmin):
 class BookImageAdmin(admin.ModelAdmin):
     list_display = ("book", "is_main", "created_at")
     list_filter = ("is_main",)
+
+@admin.register(ProductRating)
+class ProductRatingAdmin(admin.ModelAdmin):
+    list_display = ("user", "product", "score", "review")

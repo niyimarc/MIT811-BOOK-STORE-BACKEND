@@ -123,7 +123,7 @@ class BookListView(PublicViewMixin, generics.ListAPIView):
 class BookDetailView(PublicViewMixin, generics.RetrieveAPIView):
     queryset = Product.objects.all()
     serializer_class = BookDetailSerializer
-    lookup_field = "id"
+    lookup_field = "slug"
 
 class BookImageListView(PublicViewMixin, generics.ListAPIView):
     queryset = ProductImage.objects.all()
