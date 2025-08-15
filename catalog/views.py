@@ -1,12 +1,14 @@
 from rest_framework import generics
 from rest_framework.views import APIView
-from .models import Author, Category, Publisher, Tag, Product, ProductImage
-from .serializers import AuthorSerializer, CategorySerializer, PublisherSerializer, TagSerializer, BookListSerializer, BookDetailSerializer, BookImageSerializer
+from .models import Author, Category, Publisher, Tag, Product, ProductImage, ProductRating
 from auth_core.views import PublicViewMixin, PrivateUserViewMixin
 from django.db.models import Q, Count, Avg, IntegerField
 from .pagination import BookPagination
-from django.db.models.functions import Round, Coalesce
 from django.http import JsonResponse
+from .serializers import (
+    AuthorSerializer, CategorySerializer, PublisherSerializer, TagSerializer, 
+    BookListSerializer, BookDetailSerializer, BookImageSerializer, ProductRatingSerializer
+    )
 
 class AuthorListView(PublicViewMixin, generics.ListAPIView):
     queryset = Author.objects.all()
@@ -93,6 +95,15 @@ class BookListView(PublicViewMixin, generics.ListAPIView):
                 )
             except ValueError:
                 pass
+        
+        # Filter by search query
+        search_query = self.request.query_params.get("search")
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(authors__name__icontains=search_query) |
+                Q(categories__name__icontains=search_query)
+            ).distinct()
 
         # Handle ordering
         order_by_params = []
@@ -131,26 +142,5 @@ class BookImageListView(PublicViewMixin, generics.ListAPIView):
 
 class RatingCountsView(PublicViewMixin, APIView):
     def get(self, request, *args, **kwargs):
-        # Annotate each product with its rounded average rating (force integer output)
-        products_with_avg = Product.objects.annotate(
-            avg_rating=Round(
-                Coalesce(Avg("ratings__score"), 0.0),
-                output_field=IntegerField()
-            )
-        )
-
-        # Group by avg_rating and count
-        counts = products_with_avg.values("avg_rating").annotate(
-            product_count=Count("id")
-        )
-
-        # Ensure we always return ratings 1–5 with count 0 if missing
-        results = []
-        for rating in range(1, 6):
-            count = next((c["product_count"] for c in counts if c["avg_rating"] == rating), 0)
-            results.append({
-                "rating": rating,
-                "product_count": count
-            })
-
+        results = ProductRatingSerializer.get_rating_counts()
         return JsonResponse(results, safe=False)

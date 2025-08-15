@@ -37,13 +37,16 @@ class BookListSerializer(serializers.ModelSerializer):
     publisher = PublisherSerializer(read_only=True)
     main_image = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()
+    rating_counts = serializers.SerializerMethodField()
     rating_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
-            "id", "title", "slug", "isbn", "price", "stock_quantity", "format_type", "physical_stock_status", "ebook_stock_status",
-            "language", "ebook_file_size", "pages", "categories", "authors", "publisher", "main_image", "average_rating", "rating_count"
+            "id", "title", "slug", "isbn", "price", "stock_quantity",
+            "format_type", "physical_stock_status", "ebook_stock_status",
+            "language", "ebook_file_size", "pages", "categories", "authors",
+            "publisher", "main_image", "average_rating", "rating_counts", "rating_count"
         ]
 
     def get_main_image(self, obj):
@@ -52,16 +55,25 @@ class BookListSerializer(serializers.ModelSerializer):
         if main_img and main_img.image:
             return request.build_absolute_uri(main_img.image.url)
         return None
-    
+
     def get_average_rating(self, obj):
         avg = obj.average_rating
         if avg is None:
             return 0
-        # Remove .0 if integer
         return int(avg) if avg == int(avg) else round(avg, 1)
-    
+
+    # def get_rating_counts(self, obj):
+    #     return {
+    #         "1": ProductRating.objects.filter(product=obj, score=1).count(),
+    #         "2": ProductRating.objects.filter(product=obj, score=2).count(),
+    #         "3": ProductRating.objects.filter(product=obj, score=3).count(),
+    #         "4": ProductRating.objects.filter(product=obj, score=4).count(),
+    #         "5": ProductRating.objects.filter(product=obj, score=5).count(),
+    #     }
+
+
     def get_rating_count(self, obj):
-        return obj.ratings.count()
+        return ProductRating.objects.filter(product=obj).distinct().count()
 
 class BookDetailSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, read_only=True)
@@ -82,23 +94,16 @@ class BookDetailSerializer(serializers.ModelSerializer):
         return obj.average_rating
     
     def get_rating_counts(self, obj):
-        # Count how many ratings for each star 1–5
         counts = (
             ProductRating.objects
             .filter(product=obj)
             .values("score")
             .annotate(product_count=Count("id"))
         )
-        # Convert to dictionary {score: count}
-        count_map = {c["score"]: c["product_count"] for c in counts}
-        # Ensure all ratings 1–5 are included
-        results = []
-        for rating in range(1, 6):
-            results.append({
-                "rating": rating,
-                "product_count": count_map.get(rating, 0)
-            })
-        return results
+        count_map = {rating: 0 for rating in range(1, 6)}
+        for c in counts:
+            count_map[int(c["score"])] = c["product_count"]
+        return count_map
 
     def get_total_rating_count(self, obj):
         total = ProductRating.objects.filter(product=obj).count()
@@ -137,10 +142,26 @@ class ProductRatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductRating
         fields = ['id', 'user', 'product', 'score', 'review']
-        read_only_fields = ['id', 'user']  # If user is taken from request
+        read_only_fields = ['id', 'user']
 
     def validate_score(self, value):
-        # ensure score is between 1 and 5.
         if not (1 <= value <= 5):
             raise serializers.ValidationError("Score must be between 1 and 5.")
         return value
+
+    @classmethod
+    def get_rating_counts(cls):
+        """Returns counts of ratings from 1 to 5 as a dictionary."""
+        counts = (
+            ProductRating.objects
+            .values("score")
+            .annotate(product_count=Count("id"))
+        )
+
+        # Create dict with all ratings 1–5, default 0
+        count_map = {str(rating): 0 for rating in range(1, 6)}
+
+        for c in counts:
+            count_map[str(c["score"])] = c["product_count"]
+
+        return count_map
