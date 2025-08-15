@@ -28,14 +28,14 @@ class GuestCartDetailView(PublicViewMixin, APIView):
                 product = Product.objects.get(id=product_id)
                 price = float(product.price)
 
-                images = product.productimage_set.all()
+                images = product.images.all()
                 image_urls = [
                     request.build_absolute_uri(img.image.url) for img in images if img.image
                 ]
 
                 response_data.append({
                     'product_id': product.id,
-                    'product_name': product.name,
+                    'product_name': product.title,
                     'product_price': f"{price:.2f}",
                     'quantity': quantity,
                     'get_total_price': round(price * quantity, 2),
