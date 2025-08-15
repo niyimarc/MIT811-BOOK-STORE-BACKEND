@@ -62,14 +62,14 @@ class BookListSerializer(serializers.ModelSerializer):
             return 0
         return int(avg) if avg == int(avg) else round(avg, 1)
 
-    # def get_rating_counts(self, obj):
-    #     return {
-    #         "1": ProductRating.objects.filter(product=obj, score=1).count(),
-    #         "2": ProductRating.objects.filter(product=obj, score=2).count(),
-    #         "3": ProductRating.objects.filter(product=obj, score=3).count(),
-    #         "4": ProductRating.objects.filter(product=obj, score=4).count(),
-    #         "5": ProductRating.objects.filter(product=obj, score=5).count(),
-    #     }
+    def get_rating_counts(self, obj):
+        return {
+            "1": ProductRating.objects.filter(product=obj, score=1).count(),
+            "2": ProductRating.objects.filter(product=obj, score=2).count(),
+            "3": ProductRating.objects.filter(product=obj, score=3).count(),
+            "4": ProductRating.objects.filter(product=obj, score=4).count(),
+            "5": ProductRating.objects.filter(product=obj, score=5).count(),
+        }
 
 
     def get_rating_count(self, obj):
