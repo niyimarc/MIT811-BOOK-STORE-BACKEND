@@ -17,3 +17,5 @@ MEDIA_URL = 'media/'
 STATICFILES_DIRS = [
     STATIC_DIR,
 ]
+
+MEDIA_BASE_URL = 'http://127.0.0.1:8000'

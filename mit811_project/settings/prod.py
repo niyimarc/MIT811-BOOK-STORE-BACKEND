@@ -15,3 +15,5 @@ MEDIA_URL = 'https://backend.bookhive.us/media/'
 STATICFILES_DIRS = [
     STATIC_DIR,
 ]
+
+MEDIA_BASE_URL = 'https://backend.bookhive.us/'
