@@ -144,3 +144,11 @@ class RatingCountsView(PublicViewMixin, APIView):
     def get(self, request, *args, **kwargs):
         results = ProductRatingSerializer.get_rating_counts()
         return JsonResponse(results, safe=False)
+
+class SubmitProductRatingView(PrivateUserViewMixin, generics.CreateAPIView):
+    serializer_class = ProductRatingSerializer
+
+    def perform_create(self, serializer):
+        product_slug = self.kwargs.get("slug")
+        product = Product.objects.get(slug=product_slug)
+        serializer.save(user=self.request.user, product=product)

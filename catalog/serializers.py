@@ -75,6 +75,37 @@ class BookListSerializer(serializers.ModelSerializer):
     def get_rating_count(self, obj):
         return ProductRating.objects.filter(product=obj).distinct().count()
 
+class ProductRatingSerializer(serializers.ModelSerializer):
+    user_first_name = serializers.CharField(source="user.first_name", read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = ProductRating
+        fields = ['id', 'user_first_name', 'product', 'score', 'review', 'created_at']
+        read_only_fields = ['id', 'user_first_name', 'product', 'created_at']
+
+    def validate_score(self, value):
+        if not (1 <= value <= 5):
+            raise serializers.ValidationError("Score must be between 1 and 5.")
+        return value
+
+    @classmethod
+    def get_rating_counts(cls):
+        """Returns counts of ratings from 1 to 5 as a dictionary."""
+        counts = (
+            ProductRating.objects
+            .values("score")
+            .annotate(product_count=Count("id"))
+        )
+
+        # Create dict with all ratings 1–5, default 0
+        count_map = {str(rating): 0 for rating in range(1, 6)}
+
+        for c in counts:
+            count_map[str(c["score"])] = c["product_count"]
+
+        return count_map
+
 class BookDetailSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, read_only=True)
     authors = AuthorSerializer(many=True, read_only=True)
@@ -85,6 +116,7 @@ class BookDetailSerializer(serializers.ModelSerializer):
     rating_counts = serializers.SerializerMethodField()
     total_rating_count = serializers.SerializerMethodField()
     related_books = serializers.SerializerMethodField()
+    reviews = ProductRatingSerializer(many=True, read_only=True, source="ratings")
 
     class Meta:
         model = Product
@@ -138,30 +170,3 @@ class BookDetailSerializer(serializers.ModelSerializer):
         serializer = BookListSerializer(related_books[:4], many=True, context=self.context)
         return serializer.data
 
-class ProductRatingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductRating
-        fields = ['id', 'user', 'product', 'score', 'review']
-        read_only_fields = ['id', 'user']
-
-    def validate_score(self, value):
-        if not (1 <= value <= 5):
-            raise serializers.ValidationError("Score must be between 1 and 5.")
-        return value
-
-    @classmethod
-    def get_rating_counts(cls):
-        """Returns counts of ratings from 1 to 5 as a dictionary."""
-        counts = (
-            ProductRating.objects
-            .values("score")
-            .annotate(product_count=Count("id"))
-        )
-
-        # Create dict with all ratings 1–5, default 0
-        count_map = {str(rating): 0 for rating in range(1, 6)}
-
-        for c in counts:
-            count_map[str(c["score"])] = c["product_count"]
-
-        return count_map
