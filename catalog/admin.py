@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Author, Category, Publisher, Tag, Product, ProductImage, ProductRating
+from .models import Author, Category, Publisher, Tag, Product, ProductImage, ProductRating, Discount
 
 
 @admin.register(Author)
@@ -36,6 +36,9 @@ class BookImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
 
+class DiscountInline(admin.TabularInline):
+    model = Discount
+    extra = 1
 
 @admin.register(Product)
 class BookAdmin(admin.ModelAdmin):
@@ -43,7 +46,7 @@ class BookAdmin(admin.ModelAdmin):
     list_filter = ("publisher", "authors", "tags")
     search_fields = ("title", "isbn")
     prepopulated_fields = {"slug": ("title",)}
-    inlines = [BookImageInline]
+    inlines = [BookImageInline, DiscountInline]
     ordering = ("title",)
 
 

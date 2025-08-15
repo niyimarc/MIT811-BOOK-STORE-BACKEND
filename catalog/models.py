@@ -6,6 +6,8 @@ from .constants import PRODUCT_STATUS, BOOK_FORMAT_CHOICES, PHYSICAL_STOCK_STATU
 from mptt.models import MPTTModel, TreeForeignKey
 from django.db.models import Avg
 from django.core.validators import MinValueValidator, MaxValueValidator
+from .validators import validate_non_negative
+from django.core.exceptions import ValidationError
 
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -186,3 +188,31 @@ class ProductImage(TimeStampedModel):
 
     def __str__(self):
         return f"Image for {self.book.title}"
+    
+class Discount(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='bulk_discounts')
+    min_quantity = models.PositiveIntegerField()
+    discount_percentage = models.DecimalField(
+        max_digits=15, 
+        decimal_places=2, 
+        validators=[validate_non_negative], 
+        help_text="Enter discount as percentage (e.g., 10 for 10 percent discount)"
+        )
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    notify_customers = models.BooleanField(default=False)
+    created_on = models.DateTimeField(auto_now_add=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        # Check if there is already an existing discount for the same product
+        existing_discount = Discount.objects.filter(product=self.product).exclude(id=self.id)  # Exclude current instance
+        if existing_discount.exists():
+            raise ValidationError(f"A discount for {self.product.name} already exists.")
+        
+        if self.start_date is not None and self.end_date is not None:
+            if self.start_date > self.end_date:
+                raise ValidationError(f"the start date of the discount can't me more than the end date.")
+
+    def __str__(self):
+        return f"{self.discount_percentage}% off for {self.min_quantity} {self.product.name}"

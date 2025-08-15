@@ -4,7 +4,7 @@ from django.conf import settings
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_id = serializers.CharField(source='product.id')
-    product_name = serializers.CharField(source='product.name')
+    product_name = serializers.CharField(source='product.title')
     product_price = serializers.DecimalField(source='product.price', max_digits=10, decimal_places=2)
     images = serializers.SerializerMethodField()
 
@@ -13,7 +13,7 @@ class CartItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'product_id', 'product_name', 'product_price', 'quantity', 'get_total_price', 'get_discount_amount', 'images']
 
     def get_images(self, obj):
-        images = obj.product.productimage_set.all()
+        images = obj.product.images.all()
         base_url = getattr(settings, 'MEDIA_BASE_URL', '')
         return [
             f"{base_url}{image.image.url}" if image.image else ''
