@@ -1,10 +1,12 @@
 from rest_framework import generics
 from rest_framework.views import APIView
+from rest_framework.response import Response
 from .models import Author, Category, Publisher, Tag, Product, ProductImage, ProductRating
 from auth_core.views import PublicViewMixin, PrivateUserViewMixin
 from django.db.models import Q, Count, Avg, IntegerField
 from .pagination import BookPagination
 from django.http import JsonResponse
+import random
 from .serializers import (
     AuthorSerializer, CategorySerializer, PublisherSerializer, TagSerializer, 
     BookListSerializer, BookDetailSerializer, BookImageSerializer, ProductRatingSerializer
@@ -152,3 +154,29 @@ class SubmitProductRatingView(PrivateUserViewMixin, generics.CreateAPIView):
         product_slug = self.kwargs.get("slug")
         product = Product.objects.get(slug=product_slug)
         serializer.save(user=self.request.user, product=product)
+
+class FeaturedBooksView(PublicViewMixin, APIView):
+    def get(self, request, *args, **kwargs):
+        # Step 1: Get IDs of top categories (safe for MariaDB)
+        top_category_ids = (
+            Category.objects
+            .annotate(product_count=Count("books"))
+            .order_by("-product_count")
+            .values_list("id", flat=True)[:5]
+        )
+
+        # Step 2: Fetch categories with those IDs
+        top_categories = Category.objects.filter(id__in=list(top_category_ids))
+
+        # Step 3: Gather products from those categories
+        products = Product.objects.filter(categories__in=top_categories).distinct()
+
+        # Step 4: Pick 6 random products (or fewer if not enough exist)
+        product_count = min(6, products.count())
+        selected_products = random.sample(list(products), product_count) if product_count else []
+
+        # Step 5: Serialize them with BookListSerializer
+        serializer = BookListSerializer(
+            selected_products, many=True, context={"request": request}
+        )
+        return Response(serializer.data)

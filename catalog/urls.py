@@ -8,7 +8,8 @@ from .views import (
     BookDetailView,
     BookImageListView,
     RatingCountsView,
-    SubmitProductRatingView
+    SubmitProductRatingView,
+    FeaturedBooksView
 )
 
 urlpatterns = [
@@ -21,4 +22,5 @@ urlpatterns = [
     path("api/catalog/book-images/", BookImageListView.as_view(), name="book-image-list"),
     path("api/catalog/rating-counts/", RatingCountsView.as_view(), name="rating-counts"),
     path("api/catalog/<slug:slug>/reviews/", SubmitProductRatingView.as_view(), name="submit-product-reviews"),
+    path("api/catalog/featured/", FeaturedBooksView.as_view(), name="featured-books"),
 ]
