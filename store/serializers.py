@@ -15,10 +15,16 @@ class CartItemSerializer(serializers.ModelSerializer):
     def get_images(self, obj):
         images = obj.product.images.all()
         base_url = getattr(settings, 'MEDIA_BASE_URL', '')
-        return [
-            f"{base_url}{image.image.url}" if image.image else ''
-            for image in images
-        ]
+        result = []
+        for image in images:
+            if image.image:
+                url = image.image.url
+                if url.startswith('http'):
+                    result.append(url)
+                else:
+                    result.append(f"{base_url}{url}")
+        return result
+
 
 class CartSerializer(serializers.ModelSerializer):
     cart_items = CartItemSerializer(many=True)
