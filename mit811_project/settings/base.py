@@ -182,3 +182,11 @@ HMAC_SECRET_KEY = os.environ.get("HMAC_SECRET_KEY")
 
 # Models used for order
 PAYMENT_ORDER_MODEL = 'store.Order'
+
+# paystack keys
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
+
+# Flutterwave keys
+FLUTTERWAVE_PUBLIC_KEY = os.environ.get('FLUTTERWAVE_PUBLIC_KEY')
+FLUTTERWAVE_SECRET_KEY = os.environ.get('FLUTTERWAVE_SECRET_KEY')

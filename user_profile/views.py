@@ -23,8 +23,7 @@ class UserProfileView(PrivateUserViewMixin, APIView):
             billing_data = {
                 "address": billing.address,
                 "state": billing.state,
-                "city": billing.city,
-                "apartment": billing.apartment,
+                "nearest_bus_stop": billing.nearest_bus_stop,
                 "country": billing.country,
                 "zip_code": billing.zip_code,
                 "is_verified": billing.is_verified,

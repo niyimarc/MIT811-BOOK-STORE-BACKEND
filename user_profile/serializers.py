@@ -4,4 +4,4 @@ from user_profile.models import BillingAddress
 class BillingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = BillingAddress
-        fields = ['address', 'state', 'city', 'apartment', 'country', 'zip_code']
+        fields = ['address', 'state', 'nearest_bus_stop', 'country', 'zip_code']
