@@ -1,10 +1,13 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from .models import Cart, CartItem
+from .models import Cart, CartItem, Order
 from .serializers import CartSerializer, ContactUsSerializer, OrderSerializer
 from auth_core.views import PrivateUserViewMixin, PublicViewMixin
 from catalog.views import Product
+from django_pg.views import payment_verification as django_pg_payment_verification
+from django.views import View
+from django.http import JsonResponse, Http404
 
 class GetUserCartView(PrivateUserViewMixin, APIView):
     def get(self, request):
@@ -120,3 +123,22 @@ class ContactUsCreateView(APIView):
             serializer.save()
             return Response({"detail": "Message received!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class OrderDetailView(PrivateUserViewMixin, APIView):
+    def get(self, request, order_reference):
+        try:
+            order = Order.objects.get(order_reference=order_reference, user=request.user)
+        except Order.DoesNotExist:
+            return Response({"detail": "Order not found or inaccessible"}, status=status.HTTP_404_NOT_FOUND)
+        # print(f"Order: {order}")
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+       
+class ProtectedPaymentVerificationView(PrivateUserViewMixin, APIView):
+    def get(self, request, order_id, payment_method):
+        # print(f"Order ID: {order_id}")
+        # print(f"Payment Method: {payment_method}")
+        return django_pg_payment_verification(request, order_id=order_id, payment_method=payment_method)
+
+    def post(self, request, order_id, payment_method):
+        return django_pg_payment_verification(request, order_id=order_id, payment_method=payment_method)

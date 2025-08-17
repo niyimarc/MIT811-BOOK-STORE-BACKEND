@@ -34,8 +34,8 @@ class PublicViewMixin:
         return super().dispatch(*args, **kwargs)
     
 class PrivateUserViewMixin:
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     throttle_classes = [PermanentBlacklistThrottle, APIKeyRateThrottle, UserRateThrottle]
 
 class LoginAPIView(PublicViewMixin, APIView):

@@ -40,7 +40,9 @@ class HMACAuthMiddleware:
             message.encode(),
             hashlib.sha256
         ).hexdigest()
-
+        # print(f"Message: {message}")
+        # print(f"Expected Signature: {expected_signature}")
+        # print(f"Signature: {signature}")
         if not hmac.compare_digest(expected_signature, signature):
             return JsonResponse({"detail": "Invalid signature"}, status=403)
 

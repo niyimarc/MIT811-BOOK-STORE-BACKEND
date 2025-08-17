@@ -6,7 +6,9 @@ from .views import (
     CartItemDeleteView, 
     GuestCartDetailView, 
     ContactUsCreateView, 
-    OrderCreateView
+    OrderCreateView,
+    ProtectedPaymentVerificationView,
+    OrderDetailView,
     )
 
 urlpatterns = [
@@ -17,4 +19,6 @@ urlpatterns = [
     path('api/cart/delete_cart_item/<int:product_id>/', CartItemDeleteView.as_view(), name='delete_cart_item'),
     path('api/orders/create/', OrderCreateView.as_view(), name='create_order'),
     path('api/contact_us/', ContactUsCreateView.as_view(), name='contact_us'),
+    path("api/verify/<int:order_id>/<str:payment_method>/", ProtectedPaymentVerificationView.as_view(), name="payment_verification"),
+    path("api/orders/<str:order_reference>/", OrderDetailView.as_view(), name="get_order"),
 ]

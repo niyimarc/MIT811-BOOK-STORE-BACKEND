@@ -64,10 +64,12 @@ class OrderSerializer(serializers.ModelSerializer):
     order_items = OrderItemSerializer(many=True, write_only=True)
     shipping_address = ShippingAddressSerializer(write_only=True)
     note = OrderNoteSerializer(write_only=True, required=False)
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    total_discount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'order_items', 'shipping_address', 'note']
+        fields = ['id', 'order_items', 'shipping_address', 'note', 'total_price', 'total_discount',]
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -87,6 +89,10 @@ class OrderSerializer(serializers.ModelSerializer):
 
         if note_data:
             OrderNote.objects.create(order=order, **note_data)
+
+        # update totals before returning
+        order.update_total_price()
+        order.update_total_discount()
 
         return order
     
