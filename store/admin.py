@@ -34,8 +34,8 @@ class OrderItemInline(admin.TabularInline):
     readonly_fields = ('price', 'discount', 'total',)
     extra = 1
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
     
     def has_add_permission(self, request, obj=None):
         return False
@@ -47,8 +47,8 @@ class ShippingAddressInline(admin.TabularInline):
     model = ShippingAddress
     extra = 1
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
     
     def has_add_permission(self, request, obj=None):
         return False
@@ -60,8 +60,8 @@ class OrderNoteInline(admin.TabularInline):
     model = OrderNote
     extra = 1
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
     
     def has_add_permission(self, request, obj=None):
         return False
@@ -75,8 +75,8 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ('user', 'order_reference', 'payment_made', 'total_discount', 'total_price', 'payment_date', 'packed_date', 'in_transit_date', 'delivered_date', 'packed', 'in_transit', 'delivered', 'order_placed')
     list_filter = ('status', 'payment_made', 'order_placed', 'packed', 'in_transit', 'delivered',)
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
     
 
 class WishListInline(admin.TabularInline):

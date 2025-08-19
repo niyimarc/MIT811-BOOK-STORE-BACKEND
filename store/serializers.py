@@ -66,10 +66,20 @@ class OrderSerializer(serializers.ModelSerializer):
     note = OrderNoteSerializer(write_only=True, required=False)
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     total_discount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    payment_made = serializers.BooleanField(read_only=True)
+    order_placed = serializers.BooleanField(read_only=True)
+    status = serializers.CharField(read_only=True)
+    payment_method = serializers.CharField(read_only=True)
+    payment_date = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'order_items', 'shipping_address', 'note', 'total_price', 'total_discount',]
+        fields = [
+            'id', 'order_items', 'shipping_address', 'note', 
+            'total_price', 'total_discount',
+            'payment_made', 'order_placed', 'status', 
+            'payment_method', 'payment_date'
+        ]
 
     def create(self, validated_data):
         user = self.context['request'].user

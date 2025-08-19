@@ -5,9 +5,10 @@ from .models import Cart, CartItem, Order
 from .serializers import CartSerializer, ContactUsSerializer, OrderSerializer
 from auth_core.views import PrivateUserViewMixin, PublicViewMixin
 from catalog.views import Product
-from django_pg.views import payment_verification as django_pg_payment_verification
+from django_pg.views import PaymentVerificationJSONView
 from django.views import View
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponseRedirect
+
 
 class GetUserCartView(PrivateUserViewMixin, APIView):
     def get(self, request):
@@ -112,7 +113,8 @@ class OrderCreateView(PrivateUserViewMixin, APIView):
             return Response({
                 "success": True,
                 "message": "Order created successfully.",
-                "order_id": order.order_reference
+                "order_reference": order.order_reference,
+                "order_id": order.id
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
      
@@ -126,6 +128,7 @@ class ContactUsCreateView(APIView):
 
 class OrderDetailView(PrivateUserViewMixin, APIView):
     def get(self, request, order_reference):
+        # print(f"Order Reference: {order_reference}")
         try:
             order = Order.objects.get(order_reference=order_reference, user=request.user)
         except Order.DoesNotExist:
@@ -134,11 +137,18 @@ class OrderDetailView(PrivateUserViewMixin, APIView):
         serializer = OrderSerializer(order)
         return Response(serializer.data)
        
-class ProtectedPaymentVerificationView(PrivateUserViewMixin, APIView):
-    def get(self, request, order_id, payment_method):
-        # print(f"Order ID: {order_id}")
-        # print(f"Payment Method: {payment_method}")
-        return django_pg_payment_verification(request, order_id=order_id, payment_method=payment_method)
+class CustomPaymentVerificationJSONView(PrivateUserViewMixin, APIView, PaymentVerificationJSONView):
+    def post(self, request, order_id, payment_method, *args, **kwargs):
+        # print("Backend payment verification triggered!")
 
-    def post(self, request, order_id, payment_method):
-        return django_pg_payment_verification(request, order_id=order_id, payment_method=payment_method)
+        response = super().post(request, order_id, payment_method, *args, **kwargs)
+        # print("DEBUG response:", type(response), getattr(response, "__dict__", {}))
+
+        # Ensure JSON response
+        if isinstance(response, JsonResponse):
+            return response
+
+        return JsonResponse(
+            {"status": "ok", "content": getattr(response, "content", None)},
+            status=getattr(response, "status_code", 200),
+        )

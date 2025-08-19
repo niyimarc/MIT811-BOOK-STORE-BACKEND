@@ -5,7 +5,7 @@ Django==5.0.12
 django-autokit==0.2.1
 django-js-asset==3.1.2
 django-mptt==0.17.0
-django-pg==0.4.0
+django-pg==0.4.1
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
 idna==3.10

@@ -56,7 +56,7 @@ class CartItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return f"{self.product.name} - {self.quantity}"
+        return f"{self.product.title} - {self.quantity}"
     
     def get_total_price(self):
         """ Returns the total price for this item (quantity * price). """
@@ -132,10 +132,10 @@ class Order(BaseOrder):
         if self.payment_made and self.payment_date is None:
             self.payment_date = current_time
 
-        if self.pk:
-            original = Order.objects.get(pk=self.pk)
-            if original.status != self.status:
-                notify_buyer_on_order(self)
+        # if self.pk:
+        #     original = Order.objects.get(pk=self.pk)
+        #     if original.status != self.status:
+        #         notify_buyer_on_order(self)
 
         super().save(*args, **kwargs)
 
@@ -180,7 +180,7 @@ class OrderItem(models.Model):
         self.order.update_total_price()
     
     def __str__(self):
-        return f"{self.product.name} - {self.quantity}"
+        return f"{self.product.title} - {self.quantity}"
 
 class ShippingAddress(Address):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="shipping_address")
@@ -200,7 +200,7 @@ class WishList(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.product.name}"
+        return f"{self.product.title}"
     
 class Faq(models.Model):
     question = models.CharField(max_length=200)
